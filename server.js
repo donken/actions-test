@@ -308,3 +308,8 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Contributor aggregator server listening on http://localhost:${PORT}`);
 });
+
+module.exports = {
+  aggregateUsers,
+  renderCalendarSVG
+};
