@@ -53,6 +53,5 @@ jobs:
         with:
           default_author: github_actions
           message: 'daily SVG update'
-          add: 'hello-time.svg'
-          add: 'combined.svg'
+          add: '*.svg' # combined.svg
 
