@@ -2,7 +2,7 @@
   "name": "gh-contrib-aggregator",
   "version": "1.0.0",
   "description": "Aggregate GitHub contributions for multiple users and serve combined calendar (GraphQL)",
-  "main": "server.js",
+  "main": "daily.js",
   "scripts": {
     "update-svg": "node daily.js"
   },
