@@ -2,7 +2,7 @@ name: Daily SVG Update
 
 on:
   schedule:
-    - cron: "42 16 * * *"   # every day at 9:00 UTC
+    - cron: "0 9 * * *"   # every day at 9:00 UTC
   workflow_dispatch:       # allow manual runs too
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@users.noreply.github.com"
-          git add combined.svg
+          git add hello-time.svg
           git commit -m "Daily SVG update"
           git push
 
