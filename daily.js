@@ -24,6 +24,7 @@ query ($login: String!) {
 }
 `;
 
+
 async function fetchUserCalendar(login) {
   const res = await fetch(GRAPHQL_URL, {
     method: 'POST',
@@ -69,9 +70,7 @@ function mergedMapToPayload(merged) {
   return { start, end, total, counts };
 }
 
-/**
- * renderCalendarSVG - improved to include month labels (top) and weekday labels (left)
- */
+
 function renderCalendarSVG(mergedPayload, usersLabel) {
   const { start, end, counts } = mergedPayload;
   if (!start || !end) return '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
@@ -98,8 +97,9 @@ function renderCalendarSVG(mergedPayload, usersLabel) {
   const gap = 4;
   const paddingTop = 22; // room for month labels
   const paddingLeft = 36; // room for weekday labels
+  const paddingRight = 36; // room for weekday labels
   const padding = 8;
-  const width = paddingLeft + padding + weeks * (rectSize + gap);
+  const width = paddingLeft + padding + weeks * (rectSize + gap) + paddingRight;
   const height = paddingTop + padding + 7 * (rectSize + gap);
 
   // compute palette and thresholds
@@ -111,7 +111,9 @@ function renderCalendarSVG(mergedPayload, usersLabel) {
     Math.max(1, Math.floor(maxCount * 0.5)),
     Math.max(1, Math.floor(maxCount * 0.75))
   ];
-  const palette = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+  const palette = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39']; // regular
+  // const palette = ['#3c444d', '#033a16', '#196c2e', '#2ea043', '#56d364']; // dark
+  // # 151b23 least commits
 
   function colorForCount(count) {
     for (let i = 0; i < breaks.length; i++) {
@@ -153,7 +155,8 @@ function renderCalendarSVG(mergedPayload, usersLabel) {
     const y = paddingTop + padding + dayOfWeek * (rectSize + gap);
     const fill = colorForCount(count);
     const title = `${count} contributions on ${iso}`;
-    rects += `<rect x="${x}" y="${y}" width="${rectSize}" height="${rectSize}" rx="2" ry="2" fill="${fill}" stroke="#e6e6e6" stroke-width="0.5"><title>${title}</title></rect>\n`;
+    rects += `<rect x="${x}" y="${y}" width="${rectSize}" height="${rectSize}" rx="2" ry="2" fill="${fill}" ><title>${title}</title></rect>\n`; // regular
+    // rects += `<rect x="${x}" y="${y}" width="${rectSize}" height="${rectSize}" rx="2" ry="2" fill="${fill}" ><title>${title}</title></rect>\n`; // dark
   }
 
   // Month label SVG
@@ -171,20 +174,32 @@ function renderCalendarSVG(mergedPayload, usersLabel) {
     const textX = x;
     const textY = Math.max(12, paddingTop - 6);
     monthLabelsSvg += `<text x="${textX}" y="${textY}" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#6a737d">${label}</text>\n`;
+    // monthLabelsSvg += `<text x="${textX}" y="${textY}" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#f0f6fc">${label}</text>\n`; //dark
   }
+
 
   // Weekday labels SVG (left side)
   let weekdayLabelsSvg = '';
   for (const wl of weekdayLabels) {
-    const y = paddingTop + padding + wl.dow * (rectSize + gap) + rectSize / 2 + 4; // vertical centering tweak
-    const x = paddingLeft - 6; // place to the left of the grid
-    weekdayLabelsSvg += `<text x="${x}" y="${y}" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#6a737d">${wl.label}</text>\n`;
+    const y = paddingTop + padding + wl.dow * (rectSize + gap) + rectSize / 2 + 4;
+    const xLeft = paddingLeft - 6; // left side
+    weekdayLabelsSvg += `<text x="${xLeft}" y="${y}" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#6a737d">${wl.label}</text>\n`;
+    // weekdayLabelsSvg += `<text x="${xLeft}" y="${y}" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#f0f6fc">${wl.label}</text>\n`; //dark
+
+    // right side: place just beyond the last column
+    const xRight = width - paddingRight + 6; // stay within viewBox
+    weekdayLabelsSvg += `<text x="${xRight}" y="${y}" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#6a737d">${wl.label}</text>\n`;
+    // weekdayLabelsSvg += `<text x="${xRight}" y="${y}" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#f0f6fc">${wl.label}</text>\n`; //dark
   }
+
 
   // Combine into final SVG
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Combined contributions calendar for ${usersLabel}">
-  <rect width="100%" height="100%" fill="transparent"/>
+  
+  <rect width="100%" height="100%" fill="transparent"/> // regular
+  <!-- <rect width="100%" height="100%" fill="#0d1117"/> // dark -->
+  
   <!-- Month labels -->
   ${monthLabelsSvg}
   <!-- Weekday labels -->
@@ -207,7 +222,7 @@ async function main() {
   const payload = await aggregateUsers(users);
   const svg = renderCalendarSVG(payload, users.join(' and '));
 
-  const outPath = path.join(__dirname, 'combined.svg');
+  const outPath = path.join(__dirname, 'gh-combined-calendar.svg');
   fs.writeFileSync(outPath, svg, 'utf8');
   console.log(`SVG updated at ${outPath}`);
 }

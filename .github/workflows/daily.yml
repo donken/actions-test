@@ -1,0 +1,37 @@
+name: Daily SVG Update
+
+on:
+  schedule:
+    - cron: "50 23 * * *"   # every day at 11:50PM UTC
+  workflow_dispatch:       # allow manual runs too
+
+permissions:
+  contents: write
+
+jobs:
+  generate_svg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (optional, if using a library)
+        run: npm install # Or yarn install, if needed for SVG generation
+
+      - name: Run update script
+        run: npm run update-svg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: 'daily SVG update'
+          add: '*.svg' # combined.svg
+
